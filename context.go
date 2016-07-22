@@ -1,8 +1,20 @@
 package bono
 
-type Context struct {
-	Request  Request
-	Response Response
+type (
+	Context struct {
+		Request  Request
+		Response Response
+		state    interface{}
+	}
+)
+
+func (c *Context) State() interface{} {
+	return c.state
+}
+
+func (c *Context) SetState(state interface{}) *Context {
+	c.state = state
+	return c
 }
 
 func (c *Context) Status() int {
@@ -21,44 +33,55 @@ func (c *Context) SetBody(body []byte) error {
 	return c.Response.SetBody(body)
 }
 
-func (c *Context) Method() string {
+func (c *Context) Method() []byte {
 	return c.Request.Method()
 }
 
-// func (c *Context) SetMethod(method string) error {
-// 	return c.Request.SetMethod(method)
-// }
+func (c *Context) SetMethod(method []byte) error {
+	return c.Request.SetMethod(method)
+}
 
-func (c *Context) Path() string {
+func (c *Context) Path() []byte {
 	return c.Request.Path()
 }
 
-// func (c *Context) SetPath(path string) error {
-// 	return c.Request.SetPath(path)
-// }
+func (c *Context) Base() []byte {
+	return c.Request.Base()
+}
 
-// type Context struct {
-// 	Request    *http.Request
-// 	Response   *Response
-// 	Attributes map[string]interface{}
-// }
-//
-// func (c *Context) Set(key string, value interface{}) {
-// 	if c.Attributes == nil {
-// 		c.Attributes = make(map[string]interface{})
-// 	}
-// 	c.Attributes[key] = value
-// }
-//
-// func (c *Context) Get(key string) interface{} {
-// 	return c.Attributes[key]
-// }
-//
-// func (c *Context) Redirect(url string, status ...int) error {
-// 	if len(status) == 0 {
-// 		status = append(status, 302)
-// 	}
-// 	c.Response.Status = status[0]
-// 	//c.Response.Writer.Header().Set("Location", url)
-// 	return errors.New("Stop")
-// }
+func (c *Context) Attr() map[string]interface{} {
+	return c.Request.Attr()
+}
+
+func (c *Context) Redirect(url string, status ...int) error {
+	if status == nil {
+		status = append(status, 302)
+	}
+	c.SetStatus(status[0])
+	c.Set("Location", url)
+	return Stop
+}
+
+func (c *Context) Shift(uri []byte) *Context {
+	c.Request.Shift(uri)
+	return c
+}
+
+func (c *Context) Unshift(uri []byte) *Context {
+	c.Request.Unshift(uri)
+	return c
+}
+
+func (c *Context) Set(key string, value string) *Context {
+	c.Response.Set(key, value)
+	return c
+}
+
+func (c *Context) SetContentType(contentType string) *Context {
+	c.Response.SetContentType(contentType)
+	return c
+}
+
+func (c *Context) ParseBody() interface{} {
+	return c.Request.ParseBody()
+}

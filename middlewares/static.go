@@ -2,9 +2,9 @@ package middlewares
 
 import (
 	"io/ioutil"
+	"mime"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/reekoheek/go-bono"
 )
@@ -19,7 +19,9 @@ func StaticMiddleware(base string) bono.Middleware {
 	cacheBag := map[string]*cache{}
 
 	return func(context *bono.Context, next bono.Next) error {
-		path := strings.Replace(context.Path(), "/..", "", -1)
+		// should we make it safe from ../..
+		path := string(context.Path())
+		context.SetContentType(mime.TypeByExtension(filepath.Ext(path)))
 
 		cacheItem := cacheBag[path]
 		if cacheItem == nil {
@@ -37,6 +39,7 @@ func StaticMiddleware(base string) bono.Middleware {
 				}
 				return err
 			}
+
 			cacheBag[path] = &cache{
 				Hit: true,
 				Val: body,

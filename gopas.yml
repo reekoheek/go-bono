@@ -1,0 +1,4 @@
+name: github.com/reekoheek/go-bono
+
+dependencies:
+  - github.com/valyala/fasthttp

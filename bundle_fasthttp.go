@@ -1,18 +1,33 @@
 package bono
 
 import (
-	"github.com/reekoheek/go-bono/fh"
+	"fmt"
+
 	"github.com/valyala/fasthttp"
 )
 
-func (b *Bundle) FasthttpCallback(backedCtx *fasthttp.RequestCtx) {
+func (b *BundleImpl) FasthttpCallback(backedCtx *fasthttp.RequestCtx) {
 	ctx := &Context{
-		Request: &fh.Request{
+		Request: &RequestImpl{
 			Context: backedCtx,
 		},
 		Response: &ResponseImpl{},
 	}
-	b.Dispatch(ctx)
-	backedCtx.SetStatusCode(ctx.Status())
-	backedCtx.SetBody(ctx.Body())
+	switch err := b.Dispatch(ctx); err {
+	case Halt:
+		return
+	default:
+		if ctx.Status() == 404 && len(ctx.Body()) == 0 {
+			ctx.SetBody([]byte(fmt.Sprintf("%d", ctx.Status())))
+		}
+
+		backedCtx.SetStatusCode(ctx.Status())
+		backedCtx.SetBody(ctx.Body())
+
+		// log.Println("xxxx", ctx.Response.Headers())
+
+		for k, v := range ctx.Response.Headers() {
+			backedCtx.Response.Header.Set(k, v)
+		}
+	}
 }
